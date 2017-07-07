@@ -45,5 +45,9 @@ qint64 audioDevice::readData(char * data, qint64 maxSize)
 //Método que es llamado cada vez que el audio recorder recibe un paquete de 8 bytes, se ejecuta automáticamente
 qint64 audioDevice::writeData(const char * data, qint64 maxSize)
 {
-
+	int value = 0; // variable para guardar la intensidad actual
+	for(int counter = 0; counter < maxSize; ++counter){
+		value = abs((quint8)data[counter] - 128); //Calcular la intensidad de 0 a 128
+		std::cout << value << std::endl;
+	}
 }
