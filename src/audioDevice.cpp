@@ -1,53 +1,143 @@
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the Qt Charts module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:GPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 3 or (at your option) any later version
-** approved by the KDE Free Qt Foundation. The licenses are as published by
-** the Free Software Foundation and appearing in the file LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+#include "AudioDevice.h"
+#include <iostream>
+#include "AudioRect.h"
+#include <QGraphicsScene>
+#include <QTimer>
+#include <QGraphicsEllipseItem>
+#include "AudioCircle.h"
+#include "AudioFace.h"
+#include "AudioChart.h"
 
-#include "audioDevice.h"
-
-audioDevice::audioDevice(QGraphicsScene* scene, QObject *parent) :
+/**
+ * @brief Default constructor that starts the visualization
+ * @param scene QGraphicsScene connected to the View
+ * @param parent QObject required by the parent class constructor
+ */
+AudioDevice::AudioDevice(int visualizationCode, QGraphicsScene* scene, QObject *parent) :
 	QIODevice(parent),
-	scene(scene)
+	scene(scene),
+	timer(new QTimer()),
+	visualization(1)
 {
+	if(visualizationCode == -1){
+		connect(timer, SIGNAL(timeout()), this, SLOT(changeVisualization())); //Every 10 seconds, the visualization changes
+		timer->start(10000);
+	}
+	else{
+		//Start with the visualization specified by the visualizationCode and stick to iy
+		visualization = visualizationCode;
+		if(visualization == 0){
+			circle = new AudioCircle(scene);
+		}
+		else if(visualization == 2){
+			face = new AudioFace(scene);
+		}
+		else if(visualization == 3){
+			chart = new AudioChart(scene);
+		}
+	}
 }
 
-qint64 audioDevice::readData(char * data, qint64 maxSize)
+/**
+ * @brief Pure virtual function inherited from QIODevice taht needs to be declared. Because the device is opened on WRITE_MODE, this method musn't be used
+ * @param data Read data buffer
+ * @param maxSize Max size of the data buffer
+ * @return 0 to fulfill the method scheme
+ */
+qint64 AudioDevice::readData(char * data, qint64 maxSize)
 {
     Q_UNUSED(data)
     Q_UNUSED(maxSize)
-    return -1;
+	return 0;
 }
 
-//Método que es llamado cada vez que el audio recorder recibe un paquete de 8 bytes, se ejecuta automáticamente
-qint64 audioDevice::writeData(const char * data, qint64 maxSize)
+/**
+ * @brief Method that processes the data from the audioInput
+ * @param data Data given by the audioInput
+ * @param maxSize Max size of the data buffer
+ * @return Returns @a maxSize because it's used by the readData method
+ */
+qint64 AudioDevice::writeData(const char * data, qint64 maxSize)
 {
-	int value = 0; // variable para guardar la intensidad actual
+	int value = 0; //Var used to store the max amplitude recorded
+	bool higherThan10 = false;
+	//10 is used as a threshhold value in order to avoid unnecesary noise. The for loop checks for the highest value recorded
 	for(int counter = 0; counter < maxSize; ++counter){
-		value = abs((quint8)data[counter] - 128); //Calcular la intensidad de 0 a 128
-		std::cout << value << std::endl;
+		int currentValue = (quint8)data[counter] - 128;
+		if(currentValue > 10 || currentValue < -10){
+			higherThan10 = true;
+			if(abs(currentValue) > abs(value))
+				value = currentValue;
+		}
 	}
+
+	//Visualizes the audio with the method indicated by the visualization var
+
+	if(visualization == 0){
+		circle->update(abs(value));
+	}
+
+	else if(visualization == 1 ){
+		if(higherThan10)
+			new AudioRect(scene, abs(value));
+	}
+
+	else if(visualization == 2){
+		face->update(abs(value));
+	}
+
+	else if(visualization == 3){
+		chart->update(value);
+	}
+
+	return maxSize;
+}
+
+/**
+ * @brief This slot method is the response to the timeout from @a timer. Clears the scene and adds one to @a visualization
+ */
+void AudioDevice::changeVisualization(){
+	if(visualization == 0){
+		circle->deleteLater();
+	}
+	else if(visualization == 2){
+		face->deleteLater();
+	}
+	else if(visualization == 3){
+		chart->deleteLater();
+	}
+
+	scene->clear();
+	++visualization;
+	visualization %= 4;
+
+	if(visualization == 0){
+		circle = new AudioCircle(scene);
+	}
+	else if(visualization == 2){
+		face = new AudioFace(scene);
+	}
+	else if(visualization == 3){
+		chart = new AudioChart(scene);
+	}
+}
+
+/**
+ * @brief Destructor thats deletes the memebers located in dynamic memory
+ */
+AudioDevice::~AudioDevice(){
+	timer->deleteLater();
+	circle->deleteLater();
+	face->deleteLater();
+	chart->deleteLater();
+}
+
+/**
+ * @brief Creates a Rect where the mouse was pressed
+ * @param x X pos of the mouse
+ * @param y Y pos of the mouse
+ */
+void AudioDevice::drawRectFromMouse(qreal x, qreal y)
+{
+	scene->addItem(new AudioRect(x,y));
 }
