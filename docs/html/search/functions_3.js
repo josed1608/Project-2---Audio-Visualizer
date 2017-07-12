@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['widget',['Widget',['../class_widget.html#a29531c7f141e461322981b3b579d4590',1,'Widget']]],
-  ['writedata',['writeData',['../classaudio_device.html#a742b2359c8d0da6aafb8a223f97d6830',1,'audioDevice']]]
+  ['getbezier',['getBezier',['../class_audio_face.html#a771a35a87fd45c4ec9a841632061fd11',1,'AudioFace']]],
+  ['getcolor',['getColor',['../class_audio_circle.html#a96073d5ef8b5f6ac5cf6612ff8cf6b7c',1,'AudioCircle']]]
 ];
