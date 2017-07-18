@@ -11,22 +11,21 @@ class ChoiceWidget;
 
 class ChoiceWidget : public QWidget
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
-	explicit ChoiceWidget(QWidget *parent = 0);
-	~ChoiceWidget();
+    explicit ChoiceWidget(QWidget *parent = 0);
+    ~ChoiceWidget();
 
 private:
-	Ui::ChoiceWidget *ui;
-	View* view;
+    Ui::ChoiceWidget *ui;
+    View* view;
 
 public slots:
-	void startVisualizationAllThree();
-	void startVisualizationAudioFace();
-	void startVisualizationAudioRectangles();
-	void startVisualizationAudioCircle();
-	void startVisualizationAudioChart();
+    void startVisualizationAudioFace();
+    void startVisualizationAudioRectangles();
+    void startVisualizationAudioCircle();
+    void startVisualizationAudioChart();
 };
 
 #endif // CHOICEWIDGET_H
